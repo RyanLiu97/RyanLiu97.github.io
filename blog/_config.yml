@@ -105,5 +105,5 @@ theme: landscape
 deploy:
   type: git
   repo: https://github.com/RyanLiu97/RyanLiu97.github.io.git/blog
-  branch: master
+  branch: main
   message:
