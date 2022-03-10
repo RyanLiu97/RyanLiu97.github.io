@@ -8,13 +8,13 @@ subtitle: 'RyanLiu Blog'
 description: ''
 keywords:
 author: Ryan Liu
-language: 
+language: 'en'
 timezone: 
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
-url: https://RyanLiu97.github.io/blog
-root: /blog/
+url: https://RyanLiu97.github.io/RyanLiu97.github.io
+root: /RyanLiu97.github.io/
 permalink: :year/:month/:day/:title/
 permalink_defaults:
 pretty_urls:
@@ -104,6 +104,6 @@ theme: landscape
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
   type: git
-  repo: https://github.com/RyanLiu97/RyanLiu97.github.io.git/blog
-  branch: main
+  repo: https://github.com/RyanLiu97/RyanLiu97.github.io.git
+  branch: master
   message:
