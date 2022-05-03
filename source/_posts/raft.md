@@ -1,7 +1,8 @@
 ---
 title: raft
 date: 2022-05-03 15:10:29
-tags:
+tags: 分布式
+categories : 分布式系统
 ---
 # Raft 共识算法
 

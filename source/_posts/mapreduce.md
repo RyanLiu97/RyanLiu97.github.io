@@ -1,7 +1,8 @@
 ---
 title: mapreduce
 date: 2022-05-03 15:14:03
-tags:
+tags: 分布式
+categories: 分布式系统
 ---
 # Mit 6.824 Lab 1 Mapreduce 实验报告
 lab1的主要目的就是熟悉GO语言, 难度适中
