@@ -83,7 +83,7 @@ reduce  (k2,list(v2))    -> list(v2)
 采用生产者消费者模式:
 - Coordinator: 生产者, 产生需要执行的任务
 - Workers : 消费者, 消费从Coordinator获取的任务
-![](jpg/mapreduce.jpg)
+![](mapreduce/mapreduce.jpg)
 
 ##### Map阶段
 
