@@ -30,6 +30,11 @@ categories : 分布式系统
 >Diego Ongaro and John Ousterhout. 2014. In search of an understandable consensus algorithm. In <i>Proceedings of the 2014 USENIX conference on USENIX Annual Technical Conference</i> (<i>USENIX ATC'14</i>). USENIX Association, USA, 305–320.
 >[https://pdos.csail.mit.edu/6.824/papers/raft-extended.pdf](https://pdos.csail.mit.edu/6.824/papers/raft-extended.pdf)
 
+-强烈推荐先看Raft的动画演示, 对Raft的有一个整体的印象, 再去看论文的细节. 推荐一个动画演示的网站:
+http://thesecretlivesofdata.com/raft/
+
+- a lab guidance written by the Teaching Asistance of MIT 6.824, in which you may find it very helpful during implementng the lab: https://thesquareplanet.com/blog/students-guide-to-raft/
+
 ### 提出背景与Paxos
 
 ... 待完善
@@ -40,4 +45,46 @@ categories : 分布式系统
 - Leader
 - Follower
 - Candidate
-通常情况下只有1个Leader, 剩下的服务器都是Follower. Follower只被动的接收来自Leader和Candidate的请求,而自身不发出请求. Leader处理所有来自客户端的请求, (若客户端请求了一个Floower, 其会重定向至其Leader).
+通常情况下只有1个Leader, 剩下的服务器都是Follower. Follower只被动的接收来自Leader和Candidate的请求,而自身不发出请求. 所有来自客户端的请求都由Leader进行处理, (若客户端请求了一个Floower, 其会重定向至其Leader). Candidate是为了选举出一个新的Leader而存在的状态. 状态之间的转移如图:
+<div align="center">
+    <img src="raft/ServerStates.png" width=70% >
+</div>
+
+每个服务器会存储一个current term数字, 表示当前任期的编号, 这个编号随着时间单调递增. 这个任期编号会在不同的服务器进行交换. 分三种情况:
+- 如果当前服务器的current term小于其他服务器的term, 那么它就会更新自己的term到一个更大的值
+- 如果一个Leader或者Candidate发现自己的term过期了, 那么就会立即回到Follower的身份
+- 如果一个server收到了一个过时term的请求, 它会直接拒绝
+
+服务器之间采用RPC进行通信, 主要有两个调用:
+- RequestVote: 被Candidate用来进行Leader选举
+- AppendEntries: 由Leader向其他replicas复制日志条目的副本. 同时用来发送心跳信号.
+
+#### Raft算法需要保证的一些性质
+在了解算法之前, 先了解下Raft算法所要实现的目标是什么,主要由以下五条:
+- **Election Safty**: 每个任期只能有一个Leader
+- **Leader Append-Only**: Leader永远不会重写和删除它日志中的条目, 只会append新的条目. 也就是说Leader对日志拥有领导权.
+- **Log Matching**: 如果两个日志当中有两条index与term都相同的条目, 那么所有小于等于该index的日志条目都是确定唯一的
+- **Leader Completeness**: 如果一个日志条目已经在某一term提交了,那么在接下来的任期(higher-numbered terms)的Leader中都会包含此条目. 即无论下一个Leader是谁, 他的log当中都应该包含系统中所有已提交的日志条目
+- **State Machine Safety**: 如果一个服务器已经将日志条目应用到state machine去了, 那么任何其他服务器都不能提交一个具有相同index的不同条目. 即所有对State Machine的提交都是一致的.
+
+#### Leader Election
+所有的servers都从Follower角色开始. 只要一个server持续收到来自Leader的心跳信号, 那么它就会一直保持Follower的状态. Leader会周期性的通过发送心跳信号(通过没有log entreis的AppendEntries RPC)来保持自己的统治地位. 如果一个Follower一段时间都没有收到心跳信号, 就会触发超时, 称为**Election Timeout**, 此时服务器就会认为Leader已挂, 并开始选举一个新的Leader.
+##### Election的流程
+- follower首先自增自己的current term,并转变成candidate身份
+- candidate投自己一票, 并向集群中的其他服务器并发的发送Request Vote RPC.
+- candidate会一直处于自己的状态, 直到下列三件事发生:
+    - 赢下选举
+    - 其他服务器确立了自己的leader地位
+    - 一段时间后没有winner
+
+###### 赢下选举
+...
+
+###### 其他服务器赢下选举
+在等待选举的过程中, candidate可能会收到其他服务器的AppendEntries RPC, 即有其他服务器宣称自己是leader, 如果leader的term大于等于candidate的current term, 那么candidate就认为leader是合法的,并回到follower状态
+
+###### Split Vote
+一段时间后, candidate们之间的投票意见不一,选举超时. 通常会在所有candidate在同一时间开始选举时发生. 再超时后, current term自增, 新的一轮选举会开始.
+
+
+为了解决candidate同时开始选举而产生的Split Vote现象, Raft设计election timeout的时间为一个区间随机值, 比如在150 ~ 300 ms之间.
